@@ -60,6 +60,49 @@ class RNNTheano:
                               (self.V, self.V - learning_rate * dV),
                               (self.W, self.W - learning_rate * dW)])
     
+
+    def train(self, X_train, y_train, learning_rate=0.005, nepoch=1, evaluate_loss_after=10):
+        # We keep track of the losses so we can plot them later
+        losses = []
+        num_examples_seen = 0
+        for epoch in range(nepoch):
+            # Optionally evaluate the loss
+            if (epoch % evaluate_loss_after == 0):
+                loss = self.calculate_loss(X_train, y_train)
+                losses.append((num_examples_seen, loss))
+                time = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+                print "%s: Loss after num_examples_seen=%d epoch=%d: %f" % (time, num_examples_seen, epoch, loss)
+                # Adjust the learning rate if loss increases
+                if (len(losses) > 1 and losses[-1][1] > losses[-2][1]):
+                    learning_rate = learning_rate * 0.5  
+                    print "Setting learning rate to %f" % learning_rate
+                sys.stdout.flush()
+                # ADDED! Saving model parameters
+                save_model_parameters_theano("./data/rnn-theano-%d-%d-%s.npz" % (self.hidden_dim, self.word_dim, time), self)
+            # For each training example...
+            for i in range(len(y_train)):
+                # One SGD step
+                self.sgd_step(X_train[i], y_train[i], learning_rate)
+                num_examples_seen += 1
+
+    def generate_sentence(self, unknown_token, sentence_start_token, sentence_end_token, index_to_word, word_to_index, min_sentence_length=5):
+        sentence_length = 0
+        while sentence_length < min_sentence_length:
+            # Start the sentence with the start token
+            new_sentence = [word_to_index[sentence_start_token]]
+            # Repeat until we get an end token
+            while not new_sentence[-1] == word_to_index[sentence_end_token]:
+                next_word_probs = self.forward_propagate(new_sentence)[0]
+                sampled_word = word_to_index[unknown_token]
+                while sampled_word == word_to_index[unknown_token]:
+                    samples = np.random.multinomial(1, next_word_probs[-1])
+                    sampled_word = np.argmax(samples)
+                new_sentence.append(sampled_word)
+            sentence_str = [index_to_word[x] for x in new_sentence[1:-1]]
+            sentence_length = len(sentence_str)
+        return " ".join(sentence_str)
+
+
     def calculate_total_loss(self, X, Y):
         return np.sum([self.ce_error(x,y) for x,y in zip(X,Y)])
     
