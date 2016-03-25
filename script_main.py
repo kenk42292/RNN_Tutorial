@@ -12,11 +12,11 @@ model.gradient_check([0,1,2,3], [1,2,3,4])
 """
 
 
-vocabulary_size = 5000
-hidden_dim = 80
+vocabulary_size = 50
+hidden_dim = 20
 use_existing_data = False
 use_existing_model = False
-min_sentence_length = 7
+min_sentence_length = 3 
 
 unknown_token = "UNKNOWN_TOKEN"
 sentence_start_token = "SENTENCE_START"
@@ -29,7 +29,7 @@ model = RNN(vocabulary_size, hidden_dim)
 #print "Expected Loss for random predictions: %f" % np.log(vocabulary_size)
 #print "Actual loss: %f" % model.calculate_loss(X_train[:1000], Y_train[:1000])
 
-model.train(use_existing_model, X_train[:3000], Y_train[:3000], nepoch=100)
+model.train(use_existing_model, X_train[:300], Y_train[:300], nepoch=100)
 
 lst_failures = []
 for i in range(30):
